@@ -1,0 +1,107 @@
+---
+title: "drugi_zadatak"
+output: html_document
+---
+
+```{r}
+my_cars <- read.csv("car_specifications.csv")
+#head(my_cars)
+```
+
+The table shows centreal tendency measures for city fuel consumption based on continent.
+```{r}
+summary.result1 <- my_cars %>% 
+  group_by(continent) %>% 
+  summarise(
+    count = n(),
+    mean_city = mean(city.L.100km, na.rm = TRUE),
+    median_city = median(city.L.100km, na.rm = TRUE),
+    sd_city = sd(city.L.100km, na.rm = TRUE),
+    min_city = min(city.L.100km, na.rm = TRUE),
+    max_city = max(city.L.100km, na.rm = TRUE),
+    q25 = quantile(city.L.100km, 0.25, na.rm = TRUE),
+    q75 = quantile(city.L.100km, 0.75, na.rm = TRUE)
+  )
+
+summary.result1
+
+```
+
+```{r}
+xrange <- range(my_cars$city.L.100km)
+ymax <- max(
+  hist(my_cars[my_cars$continent == "Europe", ]$city.L.100km, plot = FALSE)$counts,
+  hist(my_cars[my_cars$continent == "Asia", ]$city.L.100km, plot = FALSE)$counts,
+  hist(my_cars[my_cars$continent == "North America", ]$city.L.100km, plot = FALSE)$counts
+)
+
+par(mfrow = c(1, 3))
+
+hist(my_cars[my_cars$continent == "Europe", ]$city.L.100km,
+     main = "Europe",
+     xlab = "L/100km",
+     ylab = "Frequency",
+     col = "lightblue",
+     border = "black",
+     xlim = xrange,
+     ylim = c(0, ymax))
+
+hist(my_cars[my_cars$continent == "Asia", ]$city.L.100km,
+     main = "Asia",
+     xlab = "L/100km",
+     ylab = "Frequency",
+     col = "lightgreen",
+     border = "black",
+     xlim = xrange,
+     ylim = c(0, ymax))
+
+hist(my_cars[my_cars$continent == "North America", ]$city.L.100km,
+     main = "North America",
+     xlab = "L/100km",
+     ylab = "Frequency",
+     col = "lightpink",
+     border = "black",
+     xlim = xrange,
+     ylim = c(0, ymax))
+
+par(mfrow = c(1,1))
+
+```
+
+The difference in city fuel consumption is clearly visible in the boxplot dioagrms. 
+```{r}
+boxplot(city.L.100km ~ continent, data = my_cars,
+        main = "City Fuel Consumption by Continent",
+        xlab = "Continent",
+        ylab = "City Fuel Consumption (L/100km)",
+        col = c("lightblue", "lightgreen", "lightpink"))
+```
+```{r}
+cars_grouped <- my_cars
+cars_grouped$fuel_group <- cut(cars_grouped$city.L.100km,
+                               breaks = c(0, 6, 9, Inf),
+                               labels = c("Low", "Moderate", "High"),
+                               include.lowest = TRUE)
+
+tbl <- table(cars_grouped$continent, cars_grouped$fuel_group)
+chisq <- chisq.test(tbl, correct = FALSE)
+
+cat("H0: City fuel consumption is independent from car producer's continent.\n")
+cat("H1: City fuel consumption is not independent from car producer's continent.\n")
+
+cat("\nExpected Counts:\n")
+print(chisq$expected)
+
+cat("\nObserved Counts:\n")
+print(chisq$observed)
+
+cat("\nPearson Chi-squared Test Result:\n")
+print(chisq)
+
+cat("\np-value < 0.05 => we reject the null hypothesis.\n")
+cat("Therefore we conclude that the car producer's continent does affect fuel consumption in cities.\n")
+
+fisher_result <- fisher.test(tbl)
+print(fisher_result)
+cat("Fisher's test supports our conclusion.")
+```
