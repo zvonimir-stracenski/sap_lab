@@ -1,10 +1,6 @@
 ---
-output:
-  pdf_document: default
-  html_document: default
----
 title: 'SAP projekt: Analiza specifikacija automobila'
-author: "Fran Lubina, Zvonimir Straenski, Luka Varga, Karlo Vešligaj"
+author: "Fran Lubina, Zvonimir Stracenski, Luka Varga, Karlo Vešligaj"
 date: "`r Sys.Date()`"
 output:
   pdf_document: default
@@ -16,12 +12,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 # Cilj i opis projekta
 
-U okviru ovog projekta naglasak će biti na statističko zaključivanje vezano uz prethodne marketinške kampanje poduzeća, što je bitan korak u planiranju budućih kampanja. Tradicionalne masovne kampanje, poput reklamnih panoa, tipično imaju vrlo nisku uspješnost koja prema provedenim studijama čcesto iznosi i ispod 1%. S druge strane, ciljani marketing često pokazuje značajno veću učinkovitost zbog usmjerenosti na kupce koji su skloniji kupnji određenih proizvoda
-i usluga.
+U okviru ovog projekta naglasak će biti na statističko zaključivanje vezano uz prethodne marketinške kampanje poduzeća, što je bitan korak u planiranju budućih kampanja. Tradicionalne masovne kampanje, poput reklamnih panoa, tipično imaju vrlo nisku uspješnost koja prema provedenim studijama često iznosi i ispod 1%. S druge strane, ciljani marketing često pokazuje značajno veću učinkovitost zbog usmjerenosti na kupce koji su skloniji kupnji određenih proizvoda i usluga.
 
 U okviru ovog projekta naglasak će biti na statističko zaključivanje vezano uz specifikacije automobila, što je bitan korak u planiranju što objektivnijih odluka o modelu koji odgovara svim zahtjevima kupca. Automobilska industrija kontinuirano evoluira, s naglaskom na ekološku održivost, sigurnost i tehnološku inovaciju. Razumijevanje odnosa između tehničkih specifikacija automobila i njihovih performansi ključno je kako za kupce tako i za proizvodače.
-Statističkom analizom podataka o automobilima moguće je identificirati ključne faktore koji utječu na cijenu,
-potrošnju goriva, i ukupne performanse vozila.
+Statističkom analizom podataka o automobilima moguće je identificirati ključne faktore koji utječu na cijenu, potrošnju goriva, i ukupne performanse vozila.
 
 ```{r echo=F, error=FALSE, warning=FALSE, message=FALSE}
 #učitavanje libraryja
