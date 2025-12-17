@@ -133,3 +133,7 @@ wilcox.test(city.L.100km ~ continent,
 
 Rezultati pokazuju p-vrijednost veću od 0.05, što znači da ne odbacujemo H₀.
 Zaključujemo da se gradska potrošnja za Aziju i Sjevernu Ameriku vjerojatno ne razlikuje značajno i mogla bi proizlaziti iz iste distribucije.
+
+Prije odabira konačnog testa, isprobana su još dva pristupa: hi-kvadrat test, pri čemu su podaci podijeljeni u tri skupine po potrošnji, te ANOVA test nakon logaritamske pretvorbe podataka.
+Kruskal-Wallisov test pokazuje se primjerenijim od hi-kvadrat testa kod kontinuiranih podataka, jer ne zahtijeva proizvoljna podjela podataka.
+Logaritamska transformacija nije uspjela postići normalnost podataka za Aziju, što dodatno opravdava primjenu neparametarskog Kruskal-Wallisova testa.
