@@ -1,18 +1,25 @@
 ---
 title: "drugi_zadatak"
+author: "Fran Lubina, Zvonimir Stracenski, Luka Varga, Karlo Vešligaj"
+date: "`r Sys.Date()`"
 output:
-  pdf_document: default
+  pdf_document:
+    latex_engine: xelatex
   html_document: default
 ---
 
-```{r}
-my_cars <- read.csv("car_specifications.csv")
-#head(my_cars)
+```{r setup, include=FALSE}
+library(dplyr)
 ```
 
-The table shows centreal tendency measures for city fuel consumption based on continent.
+#Pitanje 2: Postoji li statistički značajna razlika u gradskoj potrošnji automobila između različitih kontinenata proizvodača?
+
+```{r, echo=FALSE}
+my_cars <- read.csv("car_specifications.csv")
+# head(my_cars)
+```
+
 ```{r}
-library(dplyr)
 grouped <- group_by(my_cars, continent)
 
 summary.result1 <- summarise(
@@ -29,8 +36,10 @@ summary.result1 <- summarise(
 summary.result1
 ```
 
+Tablica prikazuje mjere centralne tendencije gradske potrošnje automobila grupiranih po kontinentu proizvođača. Može se uočiti kako se aritmetička sredina i medijan gradske potrošnje razlikuju među kontinentima.
+
 ```{r}
-xrange <- range(my_cars$city.L.100km)
+xrange <- range(my_cars$city.L.100km) + c(-0.5, 0.5)
 ymax <- max(
   hist(my_cars[my_cars$continent == "Europe", ]$city.L.100km, plot = FALSE)$counts,
   hist(my_cars[my_cars$continent == "Asia", ]$city.L.100km, plot = FALSE)$counts,
@@ -45,8 +54,7 @@ hist(my_cars[my_cars$continent == "Europe", ]$city.L.100km,
      ylab = "Frequency",
      col = "lightblue",
      border = "black",
-     xlim = xrange,
-     ylim = c(0, ymax))
+     xlim = xrange)
 
 hist(my_cars[my_cars$continent == "Asia", ]$city.L.100km,
      main = "Asia",
@@ -54,8 +62,7 @@ hist(my_cars[my_cars$continent == "Asia", ]$city.L.100km,
      ylab = "Frequency",
      col = "lightgreen",
      border = "black",
-     xlim = xrange,
-     ylim = c(0, ymax))
+     xlim = xrange)
 
 hist(my_cars[my_cars$continent == "North America", ]$city.L.100km,
      main = "North America",
@@ -63,14 +70,12 @@ hist(my_cars[my_cars$continent == "North America", ]$city.L.100km,
      ylab = "Frequency",
      col = "lightpink",
      border = "black",
-     xlim = xrange,
-     ylim = c(0, ymax))
-
-par(mfrow = c(1,1))
-
+     xlim = xrange)
 ```
 
-The difference in city fuel consumption is clearly visible in the boxplot dioagrms. 
+Ova tri histograma prikazuju raspodjelu automobila po gradskoj potrošnji, pri čemu svaki histogram predstavlja jedan od kontinenata.
+Iz prikaza je jasno vidljiva razlika u potrošnji, osobito za Europu, gdje je gradska potrošnja, prema ovom uzorku, znatno viša u odnosu na Sjevernu Ameriku i Aziju.
+
 ```{r}
 boxplot(city.L.100km ~ continent, data = my_cars,
         main = "City Fuel Consumption by Continent",
@@ -78,35 +83,10 @@ boxplot(city.L.100km ~ continent, data = my_cars,
         ylab = "City Fuel Consumption (L/100km)",
         col = c("lightblue", "lightgreen", "lightpink"))
 ```
-```{r}
-cars_grouped <- my_cars
-cars_grouped$fuel_group <- cut(cars_grouped$city.L.100km,
-                               breaks = c(0, 6, 9, Inf),
-                               labels = c("Low", "Moderate", "High"),
-                               include.lowest = TRUE)
 
-tbl <- table(cars_grouped$continent, cars_grouped$fuel_group)
-chisq <- chisq.test(tbl, correct = FALSE)
-
-cat("H0: City fuel consumption is independent from car producer's continent.\n")
-cat("H1: City fuel consumption is not independent from car producer's continent.\n")
-
-cat("\nExpected Counts:\n")
-print(chisq$expected)
-
-cat("\nObserved Counts:\n")
-print(chisq$observed)
-
-cat("\nPearson Chi-squared Test Result:\n")
-print(chisq)
-
-cat("\np-value < 0.05 => we reject the null hypothesis.\n")
-cat("Therefore we conclude that the car producer's continent does affect fuel consumption in cities.\n")
-
-fisher_result <- fisher.test(tbl)
-print(fisher_result)
-cat("Fisher's test supports our conclusion.")
-```
+U boxplot dijagramima jasno je vidljiva značajna razlika u medijanima i ostalim kvartalima između kontinenta. Posebno je istaknuta razlika između Europe i preostala dva kontinenta. Europa, prema boxplot dijagramu, ima značajno višu potrošnju. Skoro 75% Europskih automobila iz uzorka ima veću potrošnju od svih Azijskih i Sjeverno Američkih automobila.
+U uzorku automobila iz Azije i Europe postoji mali broj stršećih vrijednosti, što može utjecati na raspodjelu podataka, ali ne mijenja osnovni zaključak o razlikama među grupama.
+Kako bismo izabrali kojim testom možemo testirati postoji li statistički značajna razlika u gradskoj potrošnji automobila između različitih kontinenata proizvodača potrebno je provjeriti normalnost podataka. To je učinjeno sljedećim Q-Q dijagramima.
 
 ```{r}
 par(mfrow = c(1, 3))
@@ -132,18 +112,24 @@ qqnorm(my_cars$city.L.100km[my_cars$continent == "Asia"],
 qqline(my_cars$city.L.100km[my_cars$continent == "Asia"], col = "lightpink")
 
 ```
-Q-Q dijagrami prikazuju veliko odstupanje od normalne distribucije za proizvođače iz Sjeverne Amerike i Azije.
+
+Q-Q dijagrami prikazuju značajna odstupanja od normalne distribucije za proizvođače iz Sjeverne Amerike i Azije. Zbog toga moramo koristiti test koji ne pretpostavlja normalnost podataka. Zato koristimo Kruskal-Wallisov test koji je neparametarska alternativa ANOVA testu.
 
 ```{r}
 my_cars$continent <- as.factor(my_cars$continent)
 kruskal.test(city.L.100km ~ continent, data = my_cars)
-
-#install.packages("dunn.test")
-library(dunn.test)
-
-dunn.test(my_cars$city.L.100km, my_cars$continent, method = "bonferroni")
 ```
+Zbog izrazito niske p-vrijednosti Kruskal-Wallisovog testa zaključujemo da ova tri skupa podatka ne proistječu iz iste distribucije, tj. da postoji razlika u gradskoj potrošnji između Azije, Europe i Sjeverne Amerike.
+
+Zbog uočene sličnosti između Azije i Sjeverne Amerike provodimo Wilcoxov test kako bi usporedili samo ova dva kontinenta.
+
+H0: Ne postoji razlika u gradskoj potrošnji između Azije i Sjeverne Amerike.
+H1: Postoji razlika u gradskoj potrošnji između Azije i Sjeverne Amerike.
 
 ```{r}
-summary(aov(log(city.L.100km) ~ continent, data = my_cars))
+wilcox.test(city.L.100km ~ continent,
+            data = subset(my_cars, continent %in% c("Asia", "North America")))
 ```
+
+Rezultati pokazuju p-vrijednost veću od 0.05, što znači da ne odbacujemo H₀.
+Zaključujemo da se gradska potrošnja za Aziju i Sjevernu Ameriku vjerojatno ne razlikuje značajno i mogla bi proizlaziti iz iste distribucije.
