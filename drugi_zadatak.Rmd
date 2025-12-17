@@ -1,6 +1,8 @@
 ---
 title: "drugi_zadatak"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r}
@@ -10,21 +12,21 @@ my_cars <- read.csv("car_specifications.csv")
 
 The table shows centreal tendency measures for city fuel consumption based on continent.
 ```{r}
-summary.result1 <- my_cars %>% 
-  group_by(continent) %>% 
-  summarise(
-    count = n(),
-    mean_city = mean(city.L.100km, na.rm = TRUE),
-    median_city = median(city.L.100km, na.rm = TRUE),
-    sd_city = sd(city.L.100km, na.rm = TRUE),
-    min_city = min(city.L.100km, na.rm = TRUE),
-    max_city = max(city.L.100km, na.rm = TRUE),
-    q25 = quantile(city.L.100km, 0.25, na.rm = TRUE),
-    q75 = quantile(city.L.100km, 0.75, na.rm = TRUE)
-  )
+library(dplyr)
+grouped <- group_by(my_cars, continent)
 
+summary.result1 <- summarise(
+  grouped,
+  count = n(),
+  mean_city = mean(city.L.100km, na.rm = TRUE),
+  median_city = median(city.L.100km, na.rm = TRUE),
+  sd_city = sd(city.L.100km, na.rm = TRUE),
+  min_city = min(city.L.100km, na.rm = TRUE),
+  max_city = max(city.L.100km, na.rm = TRUE),
+  q25 = quantile(city.L.100km, 0.25, na.rm = TRUE),
+  q75 = quantile(city.L.100km, 0.75, na.rm = TRUE)
+)
 summary.result1
-
 ```
 
 ```{r}
@@ -104,4 +106,44 @@ cat("Therefore we conclude that the car producer's continent does affect fuel co
 fisher_result <- fisher.test(tbl)
 print(fisher_result)
 cat("Fisher's test supports our conclusion.")
+```
+
+```{r}
+par(mfrow = c(1, 3))
+
+qqnorm(my_cars$city.L.100km[my_cars$continent == "Europe"], 
+       main = "Q-Q Plot: Europe", 
+       xlab = "Theoretical Quantiles", 
+       ylab = "Sample Quantiles")
+qqline(my_cars$city.L.100km[my_cars$continent == "Europe"], col = "lightblue")
+
+# Q-Q plot for North America
+qqnorm(my_cars$city.L.100km[my_cars$continent == "North America"], 
+       main = "Q-Q Plot: North America", 
+       xlab = "Theoretical Quantiles", 
+       ylab = "Sample Quantiles")
+qqline(my_cars$city.L.100km[my_cars$continent == "North America"], col = "lightgreen")
+
+# Q-Q plot for Asia
+qqnorm(my_cars$city.L.100km[my_cars$continent == "Asia"], 
+       main = "Q-Q Plot: Asia", 
+       xlab = "Theoretical Quantiles", 
+       ylab = "Sample Quantiles")
+qqline(my_cars$city.L.100km[my_cars$continent == "Asia"], col = "lightpink")
+
+```
+Q-Q dijagrami prikazuju veliko odstupanje od normalne distribucije za proizvođače iz Sjeverne Amerike i Azije.
+
+```{r}
+my_cars$continent <- as.factor(my_cars$continent)
+kruskal.test(city.L.100km ~ continent, data = my_cars)
+
+#install.packages("dunn.test")
+library(dunn.test)
+
+dunn.test(my_cars$city.L.100km, my_cars$continent, method = "bonferroni")
+```
+
+```{r}
+summary(aov(log(city.L.100km) ~ continent, data = my_cars))
 ```
