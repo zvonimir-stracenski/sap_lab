@@ -1,18 +1,17 @@
 ---
-title: "drugi_zadatak"
-author: "Fran Lubina, Zvonimir Stracenski, Luka Varga, Karlo Vešligaj"
-date: "`r Sys.Date()`"
+title: "Usporedba gradske potrošnje između kontinenata"
 output:
-  html_document: default
   pdf_document:
     latex_engine: xelatex
+  html_document:
+    encoding: UTF-8
 ---
 
 ```{r setup, include=FALSE}
 library(dplyr)
 ```
 
-#Pitanje 2: Postoji li statistički značajna razlika u gradskoj potrošnji automobila između različitih kontinenata proizvodača?
+Pitanje 2: Postoji li statistički značajna razlika u gradskoj potrošnji automobila između različitih kontinenata proizvodača?
 
 ```{r, echo=FALSE}
 my_cars <- read.csv("car_specifications.csv")
@@ -49,90 +48,101 @@ ymax <- max(
 par(mfrow = c(1, 3))
 
 hist(my_cars[my_cars$continent == "Europe", ]$city.L.100km,
-     main = "Europe",
+     main = "Europa",
      xlab = "L/100km",
-     ylab = "Frequency",
+     ylab = "Frekvencija",
      col = "lightblue",
      border = "black",
      xlim = xrange)
 
 hist(my_cars[my_cars$continent == "Asia", ]$city.L.100km,
-     main = "Asia",
+     main = "Azija",
      xlab = "L/100km",
-     ylab = "Frequency",
+     ylab = "Frekvencija",
      col = "lightgreen",
      border = "black",
      xlim = xrange)
 
 hist(my_cars[my_cars$continent == "North America", ]$city.L.100km,
-     main = "North America",
+     main = "Sjeverna Amerika",
      xlab = "L/100km",
-     ylab = "Frequency",
+     ylab = "Frekvencija",
      col = "lightpink",
      border = "black",
      xlim = xrange)
 ```
 
 Ova tri histograma prikazuju raspodjelu automobila po gradskoj potrošnji, pri čemu svaki histogram predstavlja jedan od kontinenata.
-Iz prikaza je jasno vidljiva razlika u potrošnji, osobito za Europu, gdje je gradska potrošnja, prema ovom uzorku, znatno viša u odnosu na Sjevernu Ameriku i Aziju.
+Iz prikaza je jasno vidljiva razlika u potrošnji, osobito za Europu, gdje je gradska potrošnja, prema ovom uzorku, znatno viša u odnosu na Sjevernu Ameriku i Aziju.\newpage
 
 ```{r}
 boxplot(city.L.100km ~ continent, data = my_cars,
-        main = "City Fuel Consumption by Continent",
-        xlab = "Continent",
-        ylab = "City Fuel Consumption (L/100km)",
-        col = c("lightblue", "lightgreen", "lightpink"))
+        main = "Gradska potrosnja goriva po kontinentu",
+        xlab = "Kontinent",
+        ylab = "Gradska potrosnja goriva (L/100km)",
+        col = c("lightblue", "lightgreen", "lightpink"),
+        family="Helvetica")
 ```
 
-U boxplot dijagramima jasno je vidljiva značajna razlika u medijanima i ostalim kvartalima između kontinenta. Posebno je istaknuta razlika između Europe i preostala dva kontinenta. Europa, prema boxplot dijagramu, ima značajno višu potrošnju. Skoro 75% Europskih automobila iz uzorka ima veću potrošnju od svih Azijskih i Sjeverno Američkih automobila.
+U boxplot dijagramima jasno je vidljiva značajna razlika u medijanima i ostalim kvartalima između kontinenta. Posebno je istaknuta razlika između Europe i preostalih dvaju kontinenta. Europa, prema boxplot dijagramu, ima značajno višu potrošnju. Donji kvartil Europe gotovo je veći od gornjeg kvartila preostala dva kontinenta, što znači da preko 70 % europskih automobila troši jednako ili više goriva od 25 % automobila s najvećom potrošnjom u Aziji i Sjevernoj Americi.
+
 U uzorku automobila iz Azije i Europe postoji mali broj stršećih vrijednosti, što može utjecati na raspodjelu podataka, ali ne mijenja osnovni zaključak o razlikama među grupama.
+
 Kako bismo izabrali kojim testom možemo testirati postoji li statistički značajna razlika u gradskoj potrošnji automobila između različitih kontinenata proizvodača potrebno je provjeriti normalnost podataka. To je učinjeno sljedećim Q-Q dijagramima.
 
 ```{r}
 par(mfrow = c(1, 3))
 
+# Q-Q plot za Europu
 qqnorm(my_cars$city.L.100km[my_cars$continent == "Europe"], 
-       main = "Q-Q Plot: Europe", 
-       xlab = "Theoretical Quantiles", 
-       ylab = "Sample Quantiles")
+       main = "Q-Q Plot: Europa", 
+       xlab = "Teorijski kvantili", 
+       ylab = "Kvantili temeljem uzorka")
 qqline(my_cars$city.L.100km[my_cars$continent == "Europe"], col = "lightblue")
 
-# Q-Q plot for North America
+# Q-Q plot za Sjevernu Ameriku
 qqnorm(my_cars$city.L.100km[my_cars$continent == "North America"], 
-       main = "Q-Q Plot: North America", 
-       xlab = "Theoretical Quantiles", 
-       ylab = "Sample Quantiles")
+       main = "Q-Q Plot: Sjeverna Amerika", 
+       xlab = "Teorijski kvantili", 
+       ylab = "Kvantili temeljem uzorka")
 qqline(my_cars$city.L.100km[my_cars$continent == "North America"], col = "lightgreen")
 
-# Q-Q plot for Asia
+# Q-Q plot za Aziju
 qqnorm(my_cars$city.L.100km[my_cars$continent == "Asia"], 
-       main = "Q-Q Plot: Asia", 
-       xlab = "Theoretical Quantiles", 
-       ylab = "Sample Quantiles")
+       main = "Q-Q Plot: Azija", 
+       xlab ="Teorijski kvantili", 
+       ylab = "Kvantili temeljem uzorka")
 qqline(my_cars$city.L.100km[my_cars$continent == "Asia"], col = "lightpink")
 
 ```
 
-Q-Q dijagrami prikazuju značajna odstupanja od normalne distribucije za proizvođače iz Sjeverne Amerike i Azije. Zbog toga moramo koristiti test koji ne pretpostavlja normalnost podataka. Zato koristimo Kruskal-Wallisov test koji je neparametarska alternativa ANOVA testu.
+Q-Q dijagrami prikazuju značajna odstupanja od normalne distribucije za proizvođače iz Sjeverne Amerike i Azije. Zbog toga moramo koristiti test koji ne pretpostavlja normalnost podataka. Zato koristimo Kruskal-Wallisov test koji je neparametarska alternativa ANOVA testu.\newpage
+
+H0: Ne postoji razlika u distribuciji gradske potrošnje goriva između Europe, Azije i Sjeverne Amerike.\newline
+H1: Postoji razlika u distribuciji gradske potrošnje goriva između Europe, Azije i Sjeverne Amerike.
+
+Odabrana razina značajnosti: $\alpha$=0.05
 
 ```{r}
 my_cars$continent <- as.factor(my_cars$continent)
 kruskal.test(city.L.100km ~ continent, data = my_cars)
 ```
-Zbog izrazito niske p-vrijednosti Kruskal-Wallisovog testa zaključujemo da ova tri skupa podatka ne proistječu iz iste distribucije, tj. da postoji razlika u gradskoj potrošnji između Azije, Europe i Sjeverne Amerike.
 
-Zbog uočene sličnosti između Azije i Sjeverne Amerike provodimo Wilcoxov test kako bi usporedili samo ova dva kontinenta.
+Zbog izrazito niske p-vrijednosti (< 0.05) Kruskal-Wallisovog testa zaključujemo da ova tri skupa podatka ne proistječu iz iste distribucije, tj. da postoji razlika u gradskoj potrošnji između Azije, Europe i Sjeverne Amerike.
 
-H0: Ne postoji razlika u gradskoj potrošnji između Azije i Sjeverne Amerike.
-H1: Postoji razlika u gradskoj potrošnji između Azije i Sjeverne Amerike.
+Kako bismo dodatno usporedili pojedine parove kontinenata provodimo Mann-Whitney-Wilcoxonov test.
+
+Zbog višestrukih parnih usporedbi, primijenjena je Bonferronijeva korekcija kako bi se kontrolirala ukupna razina značajnosti (Alpha se dijeli s brojem usporedbi).
+Odabrana razina značajnosti za Bonferroni korekciju: 
+$\alpha_{\text{Bonferroni}} = \frac{0.05}{3} \approx 0.0167$
 
 ```{r}
-wilcox.test(city.L.100km ~ continent,
-            data = subset(my_cars, continent %in% c("Asia", "North America")))
+pairwise.wilcox.test(my_cars$city.L.100km, 
+                     my_cars$continent,
+                     p.adjust.method = "bonferroni")
 ```
 
-Rezultati pokazuju p-vrijednost veću od 0.05, što znači da ne odbacujemo H₀.
-Zaključujemo da se gradska potrošnja za Aziju i Sjevernu Ameriku vjerojatno ne razlikuje značajno i mogla bi proizlaziti iz iste distribucije.
+Zbog visoke p-vrijednosti pri usporedbi gradske potrošnje Azije i Sjeverne Amerike ne možemo odbaciti mogućnost da te dvije potrošnje proističu iz iste distribucije. Ostale kombinacije (Azije i Europa te Europa i Sjeverna Amerika) imaju izrazito nisku p-vrijednost, pa možemo zaključiti da proizlaze iz različitih distribucija.
 
 Prije odabira konačnog testa, isprobana su još dva pristupa: hi-kvadrat test, pri čemu su podaci podijeljeni u tri skupine po potrošnji, te ANOVA test nakon logaritamske pretvorbe podataka.
 Kruskal-Wallisov test pokazuje se primjerenijim od hi-kvadrat testa kod kontinuiranih podataka, jer ne zahtijeva proizvoljna podjela podataka.
