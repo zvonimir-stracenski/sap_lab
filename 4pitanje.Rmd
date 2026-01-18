@@ -1,0 +1,124 @@
+---
+title: "4pitanje"
+output: pdf_document
+date: "2026-01-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r echo=FALSE, error=FALSE, warning=FALSE, message=FALSE}
+#postavi na svoje vrijednosti
+path = "D:/C/R/files/Cars/"
+```
+
+
+```{r echo=F, error=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+set.seed(0)
+```
+
+
+```{r echo=T, error=FALSE, warning=FALSE, message=FALSE}
+```
+
+
+## 4. Zadatak: Povezanost između tipa pogona i tipa karoserije
+
+Cilj zadatka je utvrditi da li postoji povezanost između tipa pogona (prednji ili stražnji) i tipa karoserije (sedan ili hatchback). Koristimo $\chi^2$ test za neovisnost. Prvo moramo učitati i obraditi naše podatke.
+
+## 4.1. Unos podataka
+
+Prvo učitamo naše podatke.
+
+```{r}
+data = read.csv(file.path(path, "car_specifications.csv"))
+```
+
+Zatim obradimo tablicu tako da maknemo stupce koji nas ne zanimaju i ostavimo one koje trebamo (tip oogona i tip karoserije)
+
+```{r}
+data2 = select(data, c("body.style", "drive.wheels"))
+```
+
+Za svaki slučaj mićemo podatke gdje je jedna od varijablih nedefinirana.
+
+```{r}
+data2 = na.omit(data2)
+```
+
+Zatim filtriramo naše podatke tako da ostanu samo oni tipovi pogona i karoserije koje mi koristimo (prednji i stražnji za pogon, hatchback i sedan za karoseriju).
+
+```{r}
+#filtar za tip karoserije
+data2 = filter(data2, is.element(body.style, c("hatchback", "sedan")))
+
+#filtar za tip pogona
+data2 = filter(data2, is.element(drive.wheels, c("fwd", "rwd")))
+```
+
+
+## 4.2. $\chi^2$ test
+
+Generiramo kontingencijsku tablicu da proučimo podatke i graf za vizualizaciju odnosa podataka međusobno.
+
+```{r}
+tab = table(data2$body.style, data2$drive.wheels)
+tab
+
+#graf
+library(ggplot2)
+xx = c(rep("Forward wheel drive", 2), rep("Rear wheel drive", 2))
+yy = rep(c("Hatchback", "Sedan"), 2)
+tabpl = tab[1:4]
+datapl = data.frame(tab)
+ggplot(datapl, aes(fill=yy, x=xx, y=tabpl)) +
+  geom_bar(position = "fill", stat = "identity") +
+  xlab("Wheel drive type") +
+  ylab("Percent") +
+  scale_fill_discrete(name = "Body type")
+```
+
+Vidimo da je jedina prava pretpostavka za $\chi^2$ test (svaka observacija u tablici iznad 5) ispunjena. Druga pretpostavka, isključivost kategorija, implicitno ispunjujemo prema značenju kategorija (npr. auto ne može istovremeno biti hatchback i sedan). Graf nam ukazuje da je moguće da postoji neka povezanost između tipa karoserije i pogona.
+
+Možemo postaviti našu hipotezu:
+$$\begin{aligned}
+H_0&: o_i = e_i, \;i = \{1,...,k\}  \\
+H_1&: o_i \ne e_i, \;\exists i \\
+\alpha &= 0.05
+\end{aligned}$$
+gdje je k ukupan broj svih kategorija.
+
+Zatim jednostavno napravimo $\chi^2$ test.
+
+```{r}
+result = chisq.test(tab)
+result
+```
+
+Vidimo da je dobivena p-vrijednost > $\alpha$.
+
+## Zaključak
+
+Prema rezultatu $\chi^2$ testa, ne možemo odbaciti $H_0$ hipotezu, te nastavljamo pod prepostavkom da su tip pogona i tip karoserije uistinu nezavisni.
+
+## Dodatno
+
+Također možemo vidjeti tablicu očekivanih vrijednosti i usporediti sa dobivenim.
+
+
+Očekivane vrijednosti
+```{r echo=F}
+round(result$expected)
+```
+
+Dobivene vrijednosti
+```{r echo=F}
+tab
+```
+
+
+
+Vidimo da su vrijednosti zapravo dosta različite (što spada sa relativno niskom p-vrijednosti), no ne dovoljno da bi kategorije bile statistički značajno povezane.
