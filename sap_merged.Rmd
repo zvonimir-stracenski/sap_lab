@@ -1,0 +1,380 @@
+---
+title: 'SAP projekt: Analiza specifikacija automobila'
+author: "Fran Lubina, Zvonimir Stracenski, Luka Varga, Karlo Vešligaj"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(0)
+```
+# Cilj i opis projekta
+
+U okviru ovog projekta naglasak će biti na statističko zaključivanje vezano uz prethodne marketinške kampanje poduzeća, što je bitan korak u planiranju budućih kampanja. Tradicionalne masovne kampanje, poput reklamnih panoa, tipično imaju vrlo nisku uspješnost koja prema provedenim studijama često iznosi i ispod 1%. S druge strane, ciljani marketing često pokazuje značajno veću učinkovitost zbog usmjerenosti na kupce koji su skloniji kupnji određenih proizvoda i usluga.
+
+U okviru ovog projekta naglasak će biti na statističko zaključivanje vezano uz specifikacije automobila, što je bitan korak u planiranju što objektivnijih odluka o modelu koji odgovara svim zahtjevima kupca. Automobilska industrija kontinuirano evoluira, s naglaskom na ekološku održivost, sigurnost i tehnološku inovaciju. Razumijevanje odnosa između tehničkih specifikacija automobila i njihovih performansi ključno je kako za kupce tako i za proizvodače.
+Statističkom analizom podataka o automobilima moguće je identificirati ključne faktore koji utječu na cijenu, potrošnju goriva, i ukupne performanse vozila.
+
+```{r echo=F, error=FALSE, warning=FALSE, message=FALSE}
+#učitavanje libraryja
+library(dplyr)
+set.seed(0)
+#postavi na svoje vrijednosti
+path = "D:/C/R/files/Cars/"
+```
+
+# Inicijalni pregled i obrada podataka
+
+```{r}
+
+# Učitavanje dataseta
+my_cars <- read.csv("car_specifications.csv")
+```
+
+Podatci se sastoje od specifikacija automobila za 205 različitih modela od 22 proizvodača. Skup sadrži tehničke karakteristike i tržišne varijable s ukupno 26 atributa prikupljenih iz autoindustrije. Podaci uključuju dimenzije automobila (duljina, širina, visina), meduosovinskog razmak, obujam i snagu motora, vrstu pogonskog goriva, cijenu, broj vrata, potrošnju goriva u gradu i na autocesti, tip pogona (prednji, stražnji, 4WD) i druge relevantne specifikacije:
+
+
+```{r}
+
+dim(my_cars)
+
+names(my_cars)
+
+```
+Prikažimo prvih nekoliko redaka:
+
+```{r}
+
+head(my_cars)
+
+```
+
+# Analiza podataka
+Podatke zatim analiziramo i interpretiramo pomoću statističkih metoda vodeći se prethodno definiranim pitanjima.
+
+\newpage
+
+## Pitanje 1: Razlikuje li se snaga motora izmedu automobila s turbopunjačem i atmosferskim motorima?
+
+Najprije izračunamo mjere centralne tendencije za snagu motora ovisno o tipu usisavanja zraka.
+
+```{r}
+summary.result1 <- my_cars %>% 
+  group_by(aspiration) %>% 
+  summarise(
+    count = n(),
+    mean_horsepower = mean(horsepower, na.rm = TRUE),
+    median_horsepower = median(horsepower, na.rm = TRUE),
+    sd_horsepower = sd(horsepower, na.rm = TRUE),
+    min_horsepower = min(horsepower, na.rm = TRUE),
+    max_horsepower = max(horsepower, na.rm = TRUE),
+    q25 = quantile(horsepower, 0.25, na.rm = TRUE),
+    q75 = quantile(horsepower, 0.75, na.rm = TRUE)
+  )
+
+summary.result1
+
+```
+
+Postoje indikacije da bi motori s turbopunjačem trebali imati veću snagu od atmosferskih motora.
+
+Ovakvo ispitivanje možemo provesti t-testom.
+
+Kako bi mogli provesti test, moramo najprije provjeriti pretpostavke normalnosti i nezavisnosti uzorka. Obzirom da razmatramo dva uzoraka za motore koji se nalaze u različitim automobilima, možemo pretpostaviti njihovu nezavisnost. Sljedeći korak je provjeriti normalnost podataka koju provjeravamo histgoramom.
+
+```{r}
+clean_horsepower_std <- na.omit(my_cars[my_cars$aspiration == "std", ]$horsepower)
+clean_horsepower_turbo <- na.omit(my_cars[my_cars$aspiration == "turbo", ]$horsepower)
+
+xrange <- range(c(clean_horsepower_std, clean_horsepower_turbo))
+
+ymax <- max(
+  hist(clean_horsepower_std, plot = FALSE)$counts,
+  hist(clean_horsepower_turbo, plot = FALSE)$counts
+)
+
+par(mfrow = c(1, 2))
+
+hist(clean_horsepower_std,
+     main = "std",
+     xlab = "horsepower",
+     ylab = "Frequency",
+     col = "lightblue",
+     border = "black",
+     xlim = xrange,
+     ylim = c(0, ymax))
+
+hist(clean_horsepower_turbo,
+     main = "turbo",
+     xlab = "horsepower",
+     ylab = "Frequency",
+     col = "lightgreen",
+     border = "black",
+     xlim = xrange,
+     ylim = c(0, ymax))
+
+```
+
+Zbog prisutnosti ekstremnih vrijednosti i narušene pretpostavke o normalnosti distribucije (uočene vizualnim pregledom histograma), umjesto t-testa korišten je Mann-Whitney-Wilcoxonov test kao robusnija neparametrijska alternativa za usporedbu dviju nezavisnih skupina.
+
+Iz gornjih histograma možemo zakljućiti da podatci u dvije navedene grupe nisu normalno distribuirani.
+
+S obzirom da podaci nisu normalno distribuirani, primijenit ćemo Mann-Whitney-Wilcoxonov test.
+
+# Mann-Whitney-Wilcoxonov test
+
+Hipoteze: $$
+\begin{aligned}
+H_0 &: \text{Ne postoji značajna razlika u snazi motora, odnosno snaga turbo motora je manja ili jednaka snazi atmosferskih motora} (Mdn_{turbo} \leq Mdn_{std}) \\
+H_1 &: \text{Snaga motora automobila s turbopunjačem značajno je veća od snage automobila s atmosferskim motorom} (Mdn_{turbo} > Mdn_{std})
+\end{aligned}$$
+
+```{r}
+wilcox.test(clean_horsepower_turbo,
+            clean_horsepower_std,
+            alternative = "greater", 
+            conf.int = TRUE)
+```
+
+# Zaključak
+Mann-Whitney-Wilcoxonovim testom utvrđeno je da automobili s turbopunjačem imaju statistički značajno veću snagu motora u usporedbi s automobilima s atmosferskim motorom ($p < 0.001$). Na temelju dobivene p-vrijednosti, odbacujemo nultu hipotezu ($H_0$) u korist alternativne ($H_1$).
+
+
+\newpage
+## Pitanje 2: Postoji li statistički značajna razlika u gradskoj potrošnji automobila između različitih kontinenata proizvodača?
+
+```{r}
+grouped <- group_by(my_cars, continent)
+
+summary.result1 <- summarise(
+  grouped,
+  count = n(),
+  mean_city = mean(city.L.100km, na.rm = TRUE),
+  median_city = median(city.L.100km, na.rm = TRUE),
+  sd_city = sd(city.L.100km, na.rm = TRUE),
+  min_city = min(city.L.100km, na.rm = TRUE),
+  max_city = max(city.L.100km, na.rm = TRUE),
+  q25 = quantile(city.L.100km, 0.25, na.rm = TRUE),
+  q75 = quantile(city.L.100km, 0.75, na.rm = TRUE)
+)
+summary.result1
+```
+
+Tablica prikazuje mjere centralne tendencije gradske potrošnje automobila grupiranih po kontinentu proizvođača. Može se uočiti kako se aritmetička sredina i medijan gradske potrošnje razlikuju među kontinentima.
+
+```{r}
+xrange <- range(my_cars$city.L.100km) + c(-0.5, 0.5)
+ymax <- max(
+  hist(my_cars[my_cars$continent == "Europe", ]$city.L.100km, plot = FALSE)$counts,
+  hist(my_cars[my_cars$continent == "Asia", ]$city.L.100km, plot = FALSE)$counts,
+  hist(my_cars[my_cars$continent == "North America", ]$city.L.100km, plot = FALSE)$counts
+)
+
+par(mfrow = c(1, 3))
+
+hist(my_cars[my_cars$continent == "Europe", ]$city.L.100km,
+     main = "Europa",
+     xlab = "L/100km",
+     ylab = "Frekvencija",
+     col = "lightblue",
+     border = "black",
+     xlim = xrange)
+
+hist(my_cars[my_cars$continent == "Asia", ]$city.L.100km,
+     main = "Azija",
+     xlab = "L/100km",
+     ylab = "Frekvencija",
+     col = "lightgreen",
+     border = "black",
+     xlim = xrange)
+
+hist(my_cars[my_cars$continent == "North America", ]$city.L.100km,
+     main = "Sjeverna Amerika",
+     xlab = "L/100km",
+     ylab = "Frekvencija",
+     col = "lightpink",
+     border = "black",
+     xlim = xrange)
+```
+
+Ova tri histograma prikazuju raspodjelu automobila po gradskoj potrošnji, pri čemu svaki histogram predstavlja jedan od kontinenata.
+Iz prikaza je jasno vidljiva razlika u potrošnji, osobito za Europu, gdje je gradska potrošnja, prema ovom uzorku, znatno viša u odnosu na Sjevernu Ameriku i Aziju.\newpage
+
+```{r}
+boxplot(city.L.100km ~ continent, data = my_cars,
+        main = "Gradska potrosnja goriva po kontinentu",
+        xlab = "Kontinent",
+        ylab = "Gradska potrosnja goriva (L/100km)",
+        col = c("lightblue", "lightgreen", "lightpink"),
+        family="Helvetica")
+```
+
+U boxplot dijagramima jasno je vidljiva značajna razlika u medijanima i ostalim kvartalima između kontinenta. Posebno je istaknuta razlika između Europe i preostalih dvaju kontinenta. Europa, prema boxplot dijagramu, ima značajno višu potrošnju. Donji kvartil Europe gotovo je veći od gornjeg kvartila preostala dva kontinenta, što znači da preko 70 % europskih automobila troši jednako ili više goriva od 25 % automobila s najvećom potrošnjom u Aziji i Sjevernoj Americi.
+
+U uzorku automobila iz Azije i Europe postoji mali broj stršećih vrijednosti, što može utjecati na raspodjelu podataka, ali ne mijenja osnovni zaključak o razlikama među grupama.
+
+Kako bismo izabrali kojim testom možemo testirati postoji li statistički značajna razlika u gradskoj potrošnji automobila između različitih kontinenata proizvodača potrebno je provjeriti normalnost podataka. To je učinjeno sljedećim Q-Q dijagramima.
+
+```{r}
+par(mfrow = c(1, 3))
+
+# Q-Q plot za Europu
+qqnorm(my_cars$city.L.100km[my_cars$continent == "Europe"], 
+       main = "Q-Q Plot: Europa", 
+       xlab = "Teorijski kvantili", 
+       ylab = "Kvantili temeljem uzorka")
+qqline(my_cars$city.L.100km[my_cars$continent == "Europe"], col = "lightblue")
+
+# Q-Q plot za Sjevernu Ameriku
+qqnorm(my_cars$city.L.100km[my_cars$continent == "North America"], 
+       main = "Q-Q Plot: Sjeverna Amerika", 
+       xlab = "Teorijski kvantili", 
+       ylab = "Kvantili temeljem uzorka")
+qqline(my_cars$city.L.100km[my_cars$continent == "North America"], col = "lightgreen")
+
+# Q-Q plot za Aziju
+qqnorm(my_cars$city.L.100km[my_cars$continent == "Asia"], 
+       main = "Q-Q Plot: Azija", 
+       xlab ="Teorijski kvantili", 
+       ylab = "Kvantili temeljem uzorka")
+qqline(my_cars$city.L.100km[my_cars$continent == "Asia"], col = "lightpink")
+
+```
+
+Q-Q dijagrami prikazuju značajna odstupanja od normalne distribucije za proizvođače iz Sjeverne Amerike i Azije. Zbog toga moramo koristiti test koji ne pretpostavlja normalnost podataka. Zato koristimo Kruskal-Wallisov test koji je neparametarska alternativa ANOVA testu.\newpage
+
+H0: Ne postoji razlika u distribuciji gradske potrošnje goriva između Europe, Azije i Sjeverne Amerike.\newline
+H1: Postoji razlika u distribuciji gradske potrošnje goriva između Europe, Azije i Sjeverne Amerike.
+
+Odabrana razina značajnosti: $\alpha$=0.05
+
+```{r}
+my_cars$continent <- as.factor(my_cars$continent)
+kruskal.test(city.L.100km ~ continent, data = my_cars)
+```
+
+Zbog izrazito niske p-vrijednosti (< 0.05) Kruskal-Wallisovog testa zaključujemo da ova tri skupa podatka ne proistječu iz iste distribucije, tj. da postoji razlika u gradskoj potrošnji između Azije, Europe i Sjeverne Amerike.
+
+Kako bismo dodatno usporedili pojedine parove kontinenata provodimo Mann-Whitney-Wilcoxonov test.
+
+Zbog višestrukih parnih usporedbi, primijenjena je Bonferronijeva korekcija kako bi se kontrolirala ukupna razina značajnosti (Alpha se dijeli s brojem usporedbi).
+Odabrana razina značajnosti za Bonferroni korekciju: 
+$\alpha_{\text{Bonferroni}} = \frac{0.05}{3} \approx 0.0167$
+
+```{r}
+pairwise.wilcox.test(my_cars$city.L.100km, 
+                     my_cars$continent,
+                     p.adjust.method = "bonferroni")
+```
+
+Zbog visoke p-vrijednosti pri usporedbi gradske potrošnje Azije i Sjeverne Amerike ne možemo odbaciti mogućnost da te dvije potrošnje proističu iz iste distribucije. Ostale kombinacije (Azije i Europa te Europa i Sjeverna Amerika) imaju izrazito nisku p-vrijednost, pa možemo zaključiti da proizlaze iz različitih distribucija.
+
+Prije odabira konačnog testa, isprobana su još dva pristupa: hi-kvadrat test, pri čemu su podaci podijeljeni u tri skupine po potrošnji, te ANOVA test nakon logaritamske pretvorbe podataka.
+Kruskal-Wallisov test pokazuje se primjerenijim od hi-kvadrat testa kod kontinuiranih podataka, jer ne zahtijeva proizvoljnu podjelu podataka.
+Logaritamska transformacija nije uspjela postići normalnost podataka za Aziju, što dodatno opravdava primjenu neparametarskog Kruskal-Wallisova testa.
+
+
+```{r echo=F, error=FALSE, warning=FALSE, message=FALSE}
+
+set.seed(0)
+```
+
+
+```{r echo=T, error=FALSE, warning=FALSE, message=FALSE}
+```
+
+\newpage
+## Pitanje 4: Postoji li veza izmedu tipa pogona (prednji vs. stražnji) i tipa karoserije (sedan vs. hatchback)?
+
+Cilj zadatka je utvrditi da li postoji povezanost između tipa pogona (prednji ili stražnji) i tipa karoserije (sedan ili hatchback). Koristimo $\chi^2$ test za neovisnost. Prvo moramo učitati i obraditi naše podatke.
+
+# 4.1. Unos podataka
+
+Prvo obradimo tablicu tako da maknemo stupce koji nas ne zanimaju i ostavimo one koje trebamo (tip pogona i tip karoserije)
+
+```{r}
+data2 = select(my_cars, c("body.style", "drive.wheels"))
+```
+
+Za svaki slučaj mićemo podatke gdje je jedna od varijablih nedefinirana.
+
+```{r}
+data2 = na.omit(data2)
+```
+
+Zatim filtriramo naše podatke tako da ostanu samo oni tipovi pogona i karoserije koje mi koristimo (prednji i stražnji za pogon, hatchback i sedan za karoseriju).
+
+```{r}
+#filtar za tip karoserije
+data2 = filter(data2, is.element(body.style, c("hatchback", "sedan")))
+
+#filtar za tip pogona
+data2 = filter(data2, is.element(drive.wheels, c("fwd", "rwd")))
+```
+
+
+## 4.2. $\chi^2$ test
+
+Generiramo kontingencijsku tablicu da proučimo podatke i graf za vizualizaciju odnosa podataka međusobno.
+
+```{r}
+tab = table(data2$body.style, data2$drive.wheels)
+tab
+
+#graf
+library(ggplot2)
+xx = c(rep("Forward wheel drive", 2), rep("Rear wheel drive", 2))
+yy = rep(c("Hatchback", "Sedan"), 2)
+tabpl = tab[1:4]
+datapl = data.frame(tab)
+ggplot(datapl, aes(fill=yy, x=xx, y=tabpl)) +
+  geom_bar(position = "fill", stat = "identity") +
+  xlab("Wheel drive type") +
+  ylab("Percent") +
+  scale_fill_discrete(name = "Body type")
+```
+
+Vidimo da je jedina prava pretpostavka za $\chi^2$ test (svaka observacija u tablici iznad 5) ispunjena. Druga pretpostavka, isključivost kategorija, implicitno ispunjujemo prema značenju kategorija (npr. auto ne može istovremeno biti hatchback i sedan). Graf nam ukazuje da je moguće da postoji neka povezanost između tipa karoserije i pogona.
+
+Možemo postaviti našu hipotezu:
+$$\begin{aligned}
+H_0&: o_i = e_i, \;i = \{1,...,k\}  \\
+H_1&: o_i \ne e_i, \;\exists i \\
+\alpha &= 0.05
+\end{aligned}$$
+gdje je k ukupan broj svih kategorija.
+
+Zatim jednostavno napravimo $\chi^2$ test.
+
+```{r}
+result = chisq.test(tab)
+result
+```
+
+Vidimo da je dobivena p-vrijednost > $\alpha$.
+
+## Zaključak
+
+Prema rezultatu $\chi^2$ testa, ne možemo odbaciti $H_0$ hipotezu, te nastavljamo pod prepostavkom da su tip pogona i tip karoserije uistinu nezavisni.
+
+## Dodatno
+
+Također možemo vidjeti tablicu očekivanih vrijednosti i usporediti sa dobivenim.
+
+
+Očekivane vrijednosti
+```{r echo=F}
+round(result$expected)
+```
+
+Dobivene vrijednosti
+```{r echo=F}
+tab
+```
+
+
+
+Vidimo da su vrijednosti zapravo dosta različite (što spada sa relativno niskom p-vrijednosti), no ne dovoljno da bi kategorije bile statistički značajno povezane.
