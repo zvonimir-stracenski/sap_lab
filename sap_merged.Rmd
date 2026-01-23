@@ -295,7 +295,7 @@ Istražujemo može li se cijena vozila predvidjeti na temelju snage motora (hors
 
 ## Eksplorativna analiza
 
-```{r}
+```{r echo=T, error=FALSE, warning=FALSE, message=FALSE}
 library(dplyr)
 library(ggplot2)
 
@@ -306,7 +306,7 @@ summary(cars_model)
 ```
 
 
-```{r}
+```{r echo=T, error=FALSE, warning=FALSE, message=FALSE}
 library(GGally)
 
 ggpairs(cars_model,
@@ -320,7 +320,7 @@ ggpairs(cars_model,
 
 
 ## Višestruka linearna regresija
-```{r}
+```{r echo=T, error=FALSE, warning=FALSE, message=FALSE}
 model <- lm(
   price ~ horsepower + engine.size + city.L.100km + length + width,
   data = cars_model
@@ -330,7 +330,7 @@ summary(model)
 ```
 
 
-```{r}
+```{r echo=T, error=FALSE, warning=FALSE, message=FALSE}
 model<-lm(
 price~ engine.size+width,
 data=cars_model
@@ -338,7 +338,7 @@ data=cars_model
 summary(model)
 ```
 
-```{r}
+```{r echo=T, error=FALSE, warning=FALSE, message=FALSE}
 model<-lm(
 price~ engine.size+city.L.100km+width,
 data=cars_model
@@ -346,20 +346,13 @@ data=cars_model
 summary(model)
 ```
 
-```{r}
+```{r echo=T, error=FALSE, warning=FALSE, message=FALSE}
 model<-lm(
 price~ horsepower+width,
 data=cars_model
 )
 summary(model)
 ```
-
-## Multikolinearnost
-```{r}
-cor(cars_model, use = "complete.obs")
-```
-
-Matrica korelacija koristi se kao jednostavna provjera međusobne povezanosti varijabli. Umjerene korelacije među regresorima ne predstavljaju problem, dok vrlo visoke korelacije mogu ukazivati na redundantne informacije.
 
 ## Rezultati i interpretacija
 Dobiveni koeficijent determinacije iznosi $R^2 \approx 0.82$, a prilagođeni $R^2 \approx 0.81$, što znači da model objašnjava oko 82% varijabilnosti cijene vozila. To ukazuje na snažnu linearnu povezanost između cijene i korištenih regresora.
