@@ -287,6 +287,103 @@ set.seed(0)
 ```
 
 \newpage
+## Pitanje 3: Možemo li predvidjeti cijenu automobila na temelju dimenzija (length, width), snage motora (horsepower), obujma motora (engine-size) i gradske potrošnje goriva?
+
+# Predviđanje cijene vozila
+
+Istražujemo može li se cijena vozila predvidjeti na temelju snage motora (horsepower), veličine motora (engine.size), gradske potrošnje goriva (city.L.100km), dužine (length) i širine (width) vozila. Primjenjuje se višestruka linearna regresija jer je zavisna varijabla kontinuirana, a koristi se više kvantitativnih regresora.
+
+## Eksplorativna analiza
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+cars_model <- my_cars %>%
+  select(price, horsepower, engine.size, city.L.100km, length, width)
+
+summary(cars_model)
+```
+
+
+```{r}
+library(GGally)
+
+ggpairs(cars_model,
+        upper = list(continuous = wrap("cor", size = 4)),
+        lower = list(continuous = wrap("points", alpha = 0.5, size = 1)),
+        diag = list(continuous = wrap("barDiag", fill = "lightblue"))) +
+  theme_minimal()
+```
+
+
+
+
+## Višestruka linearna regresija
+```{r}
+model <- lm(
+  price ~ horsepower + engine.size + city.L.100km + length + width,
+  data = cars_model
+)
+
+summary(model)
+```
+
+
+```{r}
+model<-lm(
+price~ engine.size+width,
+data=cars_model
+)
+summary(model)
+```
+
+```{r}
+model<-lm(
+price~ engine.size+city.L.100km+width,
+data=cars_model
+)
+summary(model)
+```
+
+```{r}
+model<-lm(
+price~ horsepower+width,
+data=cars_model
+)
+summary(model)
+```
+
+## Multikolinearnost
+```{r}
+cor(cars_model, use = "complete.obs")
+```
+
+Matrica korelacija koristi se kao jednostavna provjera međusobne povezanosti varijabli. Umjerene korelacije među regresorima ne predstavljaju problem, dok vrlo visoke korelacije mogu ukazivati na redundantne informacije.
+
+## Rezultati i interpretacija
+Dobiveni koeficijent determinacije iznosi $R^2 \approx 0.82$, a prilagođeni $R^2 \approx 0.81$, što znači da model objašnjava oko 82% varijabilnosti cijene vozila. To ukazuje na snažnu linearnu povezanost između cijene i korištenih regresora.
+
+Pojedinačni regresori pokazuju sljedeće:
+Veličina i snaga motora te potrošnja statistički značajno utječu na cijenu.
+Dimenzije također imaju značajan pozitivan utjecaj, što pokazuje da veći automobili imaju veću cijenu.
+
+Snaga motora je nesignifikantna zbog snažne povezanosti s veličinom motora. Vidimo da je p-vrijednosti njegovog koeficijenta velika ($p \approx 0.18$).
+Dužina je također nesignifikatna, vjerojatno zbog redundatnosti sa drugom dimenzijom veličine - širinom. Vidimo veliku korelaciju između njih te veliku p-vrijednost njenog regresijskog koeficijenta.
+
+Iako korelacijska matrica ukazuje na visku koreliranost između potrošnje i veličine, odnosno snage motor, vidimo da izbacivanjem potrošnje iz modela dobivamo lošiji koeficijent determinacije.
+
+
+$R_{adj}^2 \approx R^2$ potvrđuje da je model prikladan i da dodavanje novih regresora opravdava svoje mjesto u modelu. Posebice u modelu koji ne uzima u obzir redundatne regresore.
+
+## Zaključak
+Model objašnjava visok udio varijabilnosti cijene , što ukazuje na snažnu linearnu povezanost između cijene i tehničkih karakteristika automobila. Automobili veće snage, veće veličine i veće potrošnje goriva obično imaju veću cijenu, dok prilagođeni koeficijent determinacije ($R_{adj}^2 \approx R^2$) potvrđuje da je model statistički pouzdan i da nije rezultat pukog dodavanja regresora.
+
+
+
+
+
+\newpage
 ## Pitanje 4: Postoji li veza izmedu tipa pogona (prednji vs. stražnji) i tipa karoserije (sedan vs. hatchback)?
 
 Cilj zadatka je utvrditi da li postoji povezanost između tipa pogona (prednji ili stražnji) i tipa karoserije (sedan ili hatchback). Koristimo $\chi^2$ test za neovisnost. Prvo moramo učitati i obraditi naše podatke.
