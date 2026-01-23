@@ -1,19 +1,28 @@
 ---
-title: 'SAP projekt: Analiza specifikacija automobila'
+title: "SAP projekt: Statistička analiza specifikacija automobila"
 author: "Fran Lubina, Zvonimir Stracenski, Luka Varga, Karlo Vešligaj"
-date: "`r Sys.Date()`"
+date: "23.1.2026"
 output:
-  pdf_document: default
-  html_document: default
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    highlight: tango
+fontsize: 12pt
+geometry: margin=2.5cm
+header-includes:
+   - \usepackage{setspace}
+   - \onehalfspacing
+   - \usepackage{fvextra}
+   - \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 set.seed(0)
 ```
 # Cilj i opis projekta
-
-U okviru ovog projekta naglasak će biti na statističko zaključivanje vezano uz prethodne marketinške kampanje poduzeća, što je bitan korak u planiranju budućih kampanja. Tradicionalne masovne kampanje, poput reklamnih panoa, tipično imaju vrlo nisku uspješnost koja prema provedenim studijama često iznosi i ispod 1%. S druge strane, ciljani marketing često pokazuje značajno veću učinkovitost zbog usmjerenosti na kupce koji su skloniji kupnji određenih proizvoda i usluga.
 
 U okviru ovog projekta naglasak će biti na statističko zaključivanje vezano uz specifikacije automobila, što je bitan korak u planiranju što objektivnijih odluka o modelu koji odgovara svim zahtjevima kupca. Automobilska industrija kontinuirano evoluira, s naglaskom na ekološku održivost, sigurnost i tehnološku inovaciju. Razumijevanje odnosa između tehničkih specifikacija automobila i njihovih performansi ključno je kako za kupce tako i za proizvodače.
 Statističkom analizom podataka o automobilima moguće je identificirati ključne faktore koji utječu na cijenu, potrošnju goriva, i ukupne performanse vozila.
@@ -324,9 +333,9 @@ library(sandwich)
 cor(cars_model, use = "complete.obs")
 ```
 
-Potrebno je provjeriti da li imamo multikolinearnost između regresora. Pristurnost visoko-koreliranih regresora nepovoljno utječe na numeričku stabilnost i statističku signifikantnost regresijskih koeficijenata.
+Potrebno je provjeriti da li imamo multikolinearnost između regresora. Prisutnost visoko-koreliranih regresora nepovoljno utječe na numeričku stabilnost i statističku signifikantnost regresijskih koeficijenata.
 
-Iz korelacijske matrice vidimo umjerene korelacije između većine regresora ($< 0.7$). Imamo par visokokoreliranih parova (redundantnih regresora) poput snage i veličine motora, no više o njima u naknadnim cjelinama.
+Iz korelacijske matrice vidimo umjerene korelacije između većine regresora ($< 0.7$). Imamo par visoko-koreliranih parova (redudantnih regresora) poput snage i veličine motora, no više o njima u naknadnim cjelinama.
 
 Iz korelacijske matrice također možemo ustanoviti da je većina potencijalnih regresora visoko-korelirana sa cijenom.
 
@@ -430,7 +439,7 @@ Vidimo heteroskedastičnost, primjenjuemo adekvatne testove za regresorske koefi
 coeftest(model, vcov = vcovHC(model, type = "HC1"))
 ```
 
-Visoke p-vrijednosti nekih parova regresijskih koeficijenata upućuju na redundantnost, pa ćemo ih maknuti iz modela. Domensko znanje podržava ovu odluku duzina i visina su trivijalno korelirane. Obujam i snaga motora su također korelirane. Međutim njihova veza je nelinearna i komplicirana. Naime. Dizajn i učinkovitost motora igraju značajnu ulogu.
+Visoke p-vrijednosti nekih parova regresijskih koeficijenata upućuju na redudantnost, pa ćemo ih maknuti iz modela. Domensko znanje podržava ovu odluku: dužina i širina su trivijalno povezane. Obujam i snaga motora su također povezane. Međutim njihova veza je nelinearna i komplicirana. Naime, dizajn i učinkovitost motora igraju značajnu ulogu.
 
 ```{r echo=T, error=FALSE, warning=FALSE, message=FALSE}
 model<-lm(
@@ -453,7 +462,7 @@ plot(predicted, residuales,
 abline(h = 0, col = "red", lwd = 2)
 ```
 
-Vidimo da usprokos transformacijama podaci i dalje imaju izraženu heteroskedastičnost. Koristimo robusne standarne greške.
+Vidimo da usprkos transformacijama podaci i dalje imaju izraženu heteroskedastičnost. Koristimo robusne standarne greške.
 
 ```{r echo=T, error=FALSE, warning=FALSE, message=FALSE}
 coeftest(model, vcov = vcovHC(model, type = "HC1"))
@@ -489,7 +498,7 @@ Gornji graf nas uvjerava u homoskedastičnost. Varijanca reziduala je otprilike 
 summary(model)
 ```
 
-Dobivamo statistički značajne regresijske koeficijente, ali manji koeficijent determinacije. Međutim, isključivanje statistički insignifikatnih regresora nije uvijek poželjno. U daljnjim razmatranjima, potaknuti domenskim znanjem, ćemo zanemariti redundantne regresore. Uzeti čemo u obzir relevantne, ali statistički insignifikantne - obujam motora.
+Dobivamo statistički značajne regresijske koeficijente, ali manji koeficijent determinacije. Međutim, isključivanje statistički insignifikatnih regresora nije uvijek poželjno. U daljnjim razmatranjima, potaknuti domenskim znanjem, ćemo zanemariti redudantne regresore. Uzeti čemo u obzir relevantne, ali statistički insignifikantne - obujam motora.
 
 
 ## Rezultati i interpretacija
@@ -501,9 +510,9 @@ Dimenzije također imaju imaju slabi pozitivan utjecaj.
 
 Snaga motora je insignifikantna zbog snažne povezanosti s veličinom motora.
 Visoko je korelirana sa veličinom motora, ali slabije korelirana sa cijenom nego što je to veličina motora. Vidimo da je p-vrijednosti njegovog koeficijenta velika ($p \approx 0.56$).
-Dužina je također nesignifikatna, vjerojatno zbog redundatnosti sa drugom dimenzijom veličine - širinom. Domensko znanje nam također govori da je razumno pretpostaviti da širina ima veći utjecaj na cijenu nego dužina. Vidimo veliku korelaciju između njih te veliku p-vrijednost regresijskog koeficijenta dužine ($p \approx 0.57$).
+Dužina je također nesignifikatna, vjerojatno zbog redudatnosti sa drugom dimenzijom veličine - širinom. Domensko znanje nam također govori da je razumno pretpostaviti da širina ima veći utjecaj na cijenu nego dužina. Vidimo veliku korelaciju između njih te veliku p-vrijednost regresijskog koeficijenta dužine ($p \approx 0.57$).
 
-$R_{adj}^2 \approx R^2$ potvrđuje da je model prikladan i da je odabrani skup regresora smislen. Posebice u modelu koji ne uzima u obzir redundatne regresore.
+$R_{adj}^2 \approx R^2$ potvrđuje da je model prikladan i da je odabrani skup regresora smislen. Posebice u modelu koji ne uzima u obzir redudatne regresore.
 
 U konačnici se pokazalo da je i obujam motora insignifikatna varijabla.
 Statistički jedini značajan model iz prethodne cjeline predviđa linearnu vezu između gradske potrošnje i širine vozila. Model predviđa neznatno manje snažan utjecaj na cijenu: $R^2 \approx 0.46$, $R_{adj}^2 \approx 0.44$, no sada model objašnjava manje od 50% varijabilnosti cijene vozila, stoga zaključujemo da je riječ o slaboj vezi između regresora i cijene, a ne značajnoj.
@@ -612,3 +621,7 @@ tab
 
 
 Vidimo da su vrijednosti zapravo dosta različite (što spada sa relativno niskom p-vrijednosti), no ne dovoljno da bi kategorije bile statistički značajno povezane.
+
+
+# Zaključak
+Ukratko, ovaj izvještaj razmatrao je povezanost različitih tehničkih i ekonomskih karakteristika automobila. Neke su povezanosti uočene i statistički potvrđene na uzorku, dok za druge nije bilo dovoljno dokaza da bi bile statistički značajne. Konkretno, analiza je pokazala da turbopunjači značajno povećavaju snagu motora, dok tip pogona i karoserije nisu statistički povezani, iako postoji slabija, nesignifikantna veza. Gradska potrošnja razlikuje se po kontinentu proizvodnje, a cijena vozila slabo do umjereno ovisi o nizu tehničkih karakteristika.
